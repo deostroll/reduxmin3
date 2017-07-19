@@ -1,8 +1,12 @@
 import System from "core/system"
 
 module.exports = function SampleApp(config) {
-
-	let system = new System(config.data)
+	let storeConfig = {
+		state: config.data
+	}
+	
+	let store = new System(storeConfig)
+	let system = store.getSystem()
 	system.render(config.dom_id, "App")
 	return system
 }

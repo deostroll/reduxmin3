@@ -9,7 +9,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "predev": "npm install",
-    "dev": "npm-run hot-server",
+    "dev": "npm run hot-server",
     "hot-server": "webpack-dev-server --host 0.0.0.0 --config webpack.config.js --inline --hot --progress --content-base dev-helpers/",
     "lint": "eslint --cache --ext '.js,.jsx' src test",
     "lint-errors": "eslint --cache --quiet --ext '.js,.jsx' src test",

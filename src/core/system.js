@@ -1,7 +1,8 @@
 import { createStore, bindActionCreators } from "redux"
+import { combineReducers } from "redux-immutable"
 import { fromJS } from "immutable"
 import deepExtend from "deep-extend"
-import {objReduce } from "core/utils"
+import {objReduce, objMap } from "core/utils"
 
 let idFn = (a) => a
 
@@ -20,15 +21,19 @@ export default class Store {
 
     this.getSystem = this._getSystem.bind(this)
 
-    this.store = createStore(idFn, fromJS(this.state))
+    this.store = createStore(idFn, fromJS({
+      data: this.state
+    }))
 
     this.buildSystem(false)
+
+    this.register(plugins)
 
   }
 
   register(plugins, rebuild=true) {
-    var pluginSystem = combinePlugins(plugins, this.getSystem())
-    systemExtend(this.system, pluginSystem)
+    let pluginSystem = combinePlugins(plugins, this.getSystem())
+    sysExtend(this.system, pluginSystem)
     if(rebuild) {
       this.buildSystem()
     }
@@ -40,12 +45,21 @@ export default class Store {
 
   buildSystem(buildReducer = true) {
     let dispatch = this.store.dispatch
-    let getState = this.stote.getState
+    let getState = this.store.getState
 
     this.boundSystem = Object.assign({},
         this.getRootInjects(),
-        this.getActions()
+        this.getActions(),
+        this.system.rootInjects || {}
       )
+
+    if (buildReducer) {
+      this.rebuildReducer()
+    }
+  }
+
+  rebuildReducer() {
+    this.store.replaceReducer(buildReducer(this.system.statePlugins))
   }
 
   getStore() {
@@ -54,17 +68,16 @@ export default class Store {
 
   getRootInjects() {
 
-    // TODO: write an implementation of getComponent
-
     return Object.assign({
       getSystem: this.getSystem,
-      getStore: this.getStore,
-      getState: this.store.getState
+      getStore: this.getStore.bind(this),
+      getState: this.store.getState,
+      getComponents: this.getComponents.bind(this)
     }, this.system.rootInjects || {})
   }
 
   getActions() {
-    return getBoundActions()
+    return this.getBoundActions()
   }
 
   getType(name) {
@@ -78,8 +91,16 @@ export default class Store {
   getBoundActions() {
     let dispatch = this.store.dispatch
 
-    let letAllActions = this.getType("actions")
-    
+    let actionHolders = this.getType("actions")
+    let letAllActions = objMap(actionHolders, (actions) => {
+      return objReduce(actions, (action, actionName ) => {
+        if (typeof action === "function") {
+          return {
+            [actionName] : action
+          }
+        }
+      })
+    })
     const process = creator => {
       if (typeof creator !== 'function') {
         return objMap(creator, prop => process(prop))
@@ -102,12 +123,75 @@ export default class Store {
 
   }
 
+  getComponents(component) {
+    if(typeof component !== "undefined")
+      return this.system.components[component]
+    return this.system.components
+  }
 
+} // end class store
+
+function combinePlugins(plugins, toolbox) {
+  
+  if (typeof plugins === "object" && !Array.isArray(plugins)) {
+    return plugins
+  }
+
+  if (typeof plugins === "function") {
+    return combinePlugins(plugins(toolbox), toolbox)
+  }
+
+  if (Array.isArray(plugins)) {
+    return plugins
+      .map(plgn => combinePlugins(plgn, toolbox))
+      .reduce(sysExtend, {})
+  }
 }
 
+function sysExtend(dest = {}, src = {}) {
+  //we are not doing any of the wrap action stuff...
+  return deepExtend(dest, src)
+}
+
+function buildReducer(statePlugins) {
+  let reducerObj = objMap(statePlugins, sp => {
+    return sp.reducers
+  })
+
+  return allReducers(reducerObj) 
+}
+
+function allReducers(reducerSys) {
+  let reducers = Object.keys(reducerSys).reduce((obj, key) => {
+    obj[key] = makeReducer(reducerSys[key])
+    return obj
+  }, {})
+
+  if (!Object.keys(reducers).length) {
+    return idFn
+  }
+
+  return combineReducers(reducers)
+}
+
+function makeReducer(reducerObj) {
+  return (state = new Map(), action) => {
+    if(!reducerObj)
+      return state
+
+    let redFn = reducerObj[action.type]
+    if(redFn) {
+      return redFn(state, action)
+    }
+    return state
+  }
+}
 
 import data from "core/plugins/data"
-
+import view from "core/plugins/view"
+import all_components from "core/components/all"
 let plugins = [
-  data
+  view,
+  data,
+  all_components
 ]

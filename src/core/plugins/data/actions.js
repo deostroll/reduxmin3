@@ -10,7 +10,7 @@ export function update({ path, value }) {
 
 export function set(data) {
 	return {
-		type: RESET
+		type: RESET,
 		payload: data
 	}
 }

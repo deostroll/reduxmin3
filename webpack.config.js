@@ -60,8 +60,8 @@ module.exports = require("./make-webpack-config")(rules, {
   },
 	devtool: "inline",
   entry: {
-    'swagger-ui-bundle': [
-      './src/polyfills',
+    'sample-app': [
+      './src/polyfills.js',
       './src/index.js'
     ]
   },
