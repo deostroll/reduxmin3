@@ -26,6 +26,14 @@ export default class Store {
 
   }
 
+  register(plugins, rebuild=true) {
+    var pluginSystem = combinePlugins(plugins, this.getSystem())
+    systemExtend(this.system, pluginSystem)
+    if(rebuild) {
+      this.buildSystem()
+    }
+  }
+
   _getSystem() {
     return this.boundSystem;
   }
@@ -56,7 +64,7 @@ export default class Store {
   }
 
   getActions() {
-
+    return getBoundActions()
   }
 
   getType(name) {
@@ -68,8 +76,30 @@ export default class Store {
   }
 
   getBoundActions() {
+    let dispatch = this.store.dispatch
+
     let letAllActions = this.getType("actions")
-    return objMap()
+    
+    const process = creator => {
+      if (typeof creator !== 'function') {
+        return objMap(creator, prop => process(prop))
+      }
+
+      return (...args) => {
+        let action = null
+        try {
+          action = creator(...args)
+        }
+        catch(e) {
+          return { type: 'ERROR_THROWN', payload: e}
+        }
+        finally {
+          return action
+        }
+      }
+    }
+    return objMap( letAllActions, actionCreator => bindActionCreators( process(actionCreator) , dispatch ) )
+
   }
 
 
