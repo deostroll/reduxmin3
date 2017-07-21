@@ -8,6 +8,6 @@ $(function(){
 			data : data
 		})
 
-		console.log(ui.getState().toJS())
+		// console.log(ui.getState().toJS())
 	})
 })

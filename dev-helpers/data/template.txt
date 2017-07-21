@@ -1,0 +1,33 @@
+[
+  '{{repeat(0)}}',
+  {
+    title: '{{lorem(integer(2,4), "words")}}',
+    paras: [
+      '{{repeat(7, 10)}}',
+      {
+        title: '{{lorem(integer(2,4), "words")}}',
+        paras:[
+          '{{repeat(4, 6)}}',
+          {
+            title: '{{lorem(integer(2,4), "words")}}',
+            paras:[
+              '{{repeat(0, 3)}}',
+                {
+                  title: '{{lorem(integer(2,4), "words")}}',
+                  paras:[
+                    '{{repeat(2, 3)}}',
+                    {
+                      title: '{{lorem(integer(2,4), "words")}}',
+                      paras:[
+
+                      ]
+                    }
+                  ]
+                }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

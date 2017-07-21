@@ -50,6 +50,7 @@ export default class Store {
     this.boundSystem = Object.assign({},
         this.getRootInjects(),
         this.getActions(),
+        this.getBoundSelectors(getState, this.getSystem),
         this.system.rootInjects || {}
       )
 
@@ -129,6 +130,30 @@ export default class Store {
     return this.system.components
   }
 
+  getBoundSelectors(getState, getSystem) {
+    // console.log('all selectors:', this.getType("selectors"))
+    return objMap(this.getType("selectors"), (obj, key) => {
+      let stateName = [key.slice(0, -9)] // selectors = 9 chars
+      // console.log()
+      const getNestedState = ()=> getState().getIn(stateName)
+      // console.log("nested:", getNestedState())
+      return objMap(obj, (fn) => {
+        return (...args) => {
+          // console.log('args:', args, fn)
+          let res = fn.apply(null, [getNestedState(), ...args])
+
+          //  If a selector returns a function, give it the system - for advanced usage
+          if(typeof(res) === "function")
+            res = res(getSystem())
+
+          return res
+        }
+      })
+    })
+  }
+
+
+
 } // end class store
 
 function combinePlugins(plugins, toolbox) {
@@ -175,7 +200,7 @@ function allReducers(reducerSys) {
 }
 
 function makeReducer(reducerObj) {
-  return (state = new Map(), action) => {
+  return (state = fromJS({}), action) => {
     if(!reducerObj)
       return state
 
@@ -188,10 +213,12 @@ function makeReducer(reducerObj) {
 }
 
 import data from "core/plugins/data"
+import layout from "core/plugins/layout"
 import view from "core/plugins/view"
 import all_components from "core/components/all"
 let plugins = [
   view,
   data,
+  layout,
   all_components
 ]

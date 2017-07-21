@@ -2,11 +2,15 @@ import React from "react"
 
 export default class App extends React.Component {
 	render() {
-		let { getState } = this.props
-		console.log(getState().toJS())
+		console.log('Render App')
+		let { getState, getComponent } = this.props
+		let TreeView = getComponent("TreeView", true)
+
 		return (
-			<div class="container">
-				<h2>Sample React/Redux App</h2>
+			<div className="container">
+				<h2>Sample App</h2>
+
+				<TreeView/>
 			</div>
 		)
 	}
